@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace AWPM
 {
@@ -7,7 +8,17 @@ namespace AWPM
     {
         public static void Main(string[] args)
         {
-            ProgramFlags flags = new ProgramFlags(args);
+            ProgramFlags flags;
+
+            try
+            {
+                flags = new ProgramFlags(args);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
 
             if (flags.Version)
             {
@@ -29,6 +40,19 @@ namespace AWPM
                 Console.WriteLine("Command failed, exiting...");
                 return;
             }
+
+            List<Operations> ops = flags.generateTasklist();
+
+            foreach (Operations operation in ops)
+            {
+                Console.WriteLine(operation);   
+            }
+
+            foreach (string s in flags.Packages)
+            {
+                Console.WriteLine(s);
+            }
+
         }
     }
 }

@@ -37,6 +37,11 @@ namespace AWPM
             get => version;
         }
 
+        public List<string> Packages
+        {
+            get => packages;
+        }
+
         public (bool, string) validateArguments()
         {
             if (!this.list && !this.ask && !this.update && !this.upgrade &&
@@ -46,7 +51,7 @@ namespace AWPM
                 	"list of commands.");
             }
 
-            if (this.list && (this.ask || this.update || this.upgrade ||
+            if (this.list && (this.ask || this.upgrade ||
                               this.install || this.remove))
             {
                 return (false, "Unable to execute command" +
@@ -61,7 +66,7 @@ namespace AWPM
 
             if (this.upgrade && this.remove)
             {
-                return (false, "Unable to remove packages " +
+                return (false, "Unable to remove packages" +
                                " due to upgrade command");
             }
 
@@ -105,7 +110,8 @@ namespace AWPM
                     default:
                         if (el.StartsWith("--", StringComparison.Ordinal))
                         {
-                            throw new ArgumentException("Unknown argument");
+                            throw new ArgumentException(
+                                    $"Unknown argument '{el}'");
                         }
 
                         if (el.StartsWith("-", StringComparison.Ordinal))
@@ -143,9 +149,9 @@ namespace AWPM
                                         );
                                 }
                             }
-
-                            this.packages.Add(el);
                         }
+
+                        this.packages.Add(el);
                         break;
                 }
             }
