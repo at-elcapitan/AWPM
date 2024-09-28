@@ -3,4 +3,8 @@
 
 # [Ado](https://x.com/ado1024imokenp) Windows Package Manager
 
-[A](https://x.com/ado1024imokenp)WPM is portage and pacman inpired package manager for Windows. Created to solve the most problem of every user, that wanted to use normal pac. man. on Windows.
+[A](https://x.com/ado1024imokenp)WPM is a portage and pacman-inspired package manager for Windows. It was created to solve the most common problems of every user who wants to use a normal package manager on Windows.
+
+## Warning
+
+This project is under active development and could be unstable
