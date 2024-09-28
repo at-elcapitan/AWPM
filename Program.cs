@@ -20,6 +20,10 @@ namespace AWPM
                 return;
             }
 
+#if DEBUG
+            Console.Write(flags);
+#endif
+
             if (flags.Version)
             {
                 Version version = Assembly.GetExecutingAssembly()
@@ -47,7 +51,7 @@ namespace AWPM
             {
                 Console.WriteLine(operation);   
             }
-
+                
             foreach (string s in flags.Packages)
             {
                 Console.WriteLine(s);

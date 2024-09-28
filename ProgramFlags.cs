@@ -6,7 +6,7 @@ namespace AWPM
     internal class ProgramFlags
     {
         private bool ask = false;
-        private bool list = false;
+        private bool info = false;
         private bool update = false;
         private bool force = false;
         private bool upgrade = false;
@@ -15,6 +15,7 @@ namespace AWPM
         private bool help = false;
         private bool version = false;
         private bool validated = false;
+        private string target = "";
         private List<string> packages = new List<string>();
 
         public bool Ask
@@ -42,16 +43,73 @@ namespace AWPM
             get => packages;
         }
 
+#if DEBUG
+        public override string ToString()
+        {
+            string ret = "--- DEBUG INFO ---\nOperations:\n";
+
+            if (this.update && this.force)
+            {
+                ret += "\t" + Operations.FUPDATE.ToString() + "\n";
+            }
+            else if (this.update)
+            {
+                ret += "\t" + Operations.UPDATE.ToString() + "\n";
+            }
+
+            if (this.upgrade)
+            {
+                ret += "\t" + Operations.UPGRADE.ToString() + "\n";
+            }
+
+            if (this.install)
+            {
+                ret += "\t" + Operations.INSTALL.ToString() + "\n";
+            }
+
+            if (this.remove)
+            {
+                ret += "\t" + Operations.REMOVE.ToString() + "\n";
+            }
+
+            if (this.info)
+            {
+                ret += "\t" + Operations.INFO.ToString() + "\n";
+            }
+
+            ret += "Flags: ";
+            if (this.ask)
+            {
+                ret += "ASK\n";
+            }
+
+            ret += "Packages:\n";
+
+            foreach(string s in this.packages)
+            {
+                ret += "\t" + s + "\n";         
+            }
+
+            if (this.target != "")
+            {
+                ret += $"Upgrade target: {this.target}\n";
+            }
+
+            ret += "--- END ---\n\n";
+            return ret;
+        }
+#endif
+
         public (bool, string) validateArguments()
         {
-            if (!this.list && !this.ask && !this.update && !this.upgrade &&
+            if (!this.info && !this.ask && !this.update && !this.upgrade &&
                 !this.install && !this.remove)
             {
                 return (false, "No arguments provided.\nUse --help to display " +
                 	"list of commands.");
             }
 
-            if (this.list && (this.ask || this.upgrade ||
+            if (this.info && (this.ask || this.upgrade ||
                               this.install || this.remove))
             {
                 return (false, "Unable to execute command" +
@@ -60,7 +118,7 @@ namespace AWPM
 
             if (this.install && this.remove)
             {
-                return (false, "Unable to remove packages" +
+                return (false, "Unabl\t\te to remove packages" +
                                " due to installation command");
             }
 
@@ -68,6 +126,12 @@ namespace AWPM
             {
                 return (false, "Unable to remove packages" +
                                " due to upgrade command");
+            }
+
+            if (this.upgrade && target == "")
+            {
+                return (false, "Found target argument," +
+                    " with no upgrade operation provided");
             }
 
             this.validated = true;
@@ -83,8 +147,8 @@ namespace AWPM
                     case "--ask":
                         this.ask = true;
                         break;
-                    case "--list":
-                        this.list = true;
+                    case "--info":
+                        this.info = true;
                         break;
                     case "--update":
                         this.update = true;
@@ -114,17 +178,29 @@ namespace AWPM
                                     $"Unknown argument '{el}'");
                         }
 
+                        if (el.StartsWith("@", StringComparison.Ordinal))
+                        {
+                            if (this.target != "")
+                            {
+                                throw new ArgumentException(
+                                    "Multiple target argument found");
+                            }
+
+                            this.target = el;
+                            continue;
+                        }
+
                         if (el.StartsWith("-", StringComparison.Ordinal))
                         {
-                            foreach (char c in el)
+                            foreach (char c in el.Substring(1))
                             {
                                 switch (c)
                                 {
                                     case 'a':
                                         this.ask = true;
                                         break;
-                                    case 'l':
-                                        this.list = true;
+                                    case 'I':
+                                        this.info = true;
                                         break;
                                     case 'y':
                                         if (this.update)
@@ -149,6 +225,7 @@ namespace AWPM
                                         );
                                 }
                             }
+                            break;
                         }
 
                         this.packages.Add(el);
@@ -175,10 +252,12 @@ namespace AWPM
                 ret.Add(Operations.UPDATE);
             }
 
-            if (this.upgrade && this.install || this.upgrade && !this.install)
+            if (this.upgrade)
             {
                 ret.Add(Operations.UPGRADE);
-            } else if (this.install)
+            } 
+
+            if (this.install)
             {
                 ret.Add(Operations.INSTALL);
             }
@@ -188,9 +267,9 @@ namespace AWPM
                 ret.Add(Operations.REMOVE);
             }
 
-            if (this.list)
+            if (this.info)
             {
-                ret.Add(Operations.LIST);
+                ret.Add(Operations.INFO);
             }
 
             return ret;

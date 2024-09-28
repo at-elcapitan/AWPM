@@ -3,9 +3,9 @@ namespace AWPM
 {
     internal enum Operations
     {
-        LIST,
+        INFO,
         UPDATE,
-        FUPDATE,
+        FUPDATE, // Forced update
         UPGRADE,
         INSTALL,
         REMOVE
