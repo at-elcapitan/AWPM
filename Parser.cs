@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.IO;
+using System.Linq;
 
 namespace AWPM
 {
-    public class SyntaxErrorException : Exception
+    internal class SyntaxErrorException : Exception
     {
         public List<(int, string)> DataList { get; }
 
@@ -14,6 +14,14 @@ namespace AWPM
         {
             DataList = dataList;
         }
+    }
+
+    internal enum EListValidator
+    {
+        LIST_NOT_CLOSED,
+        LIST_CHILD_SYNTAX,
+        UNKNOWN,
+        OK
     }
 
     internal class Parser
@@ -38,95 +46,95 @@ namespace AWPM
             get => lists;
         }
 
-        private bool syntaticCheck(string[] text)
+        private bool syntacticCheck(string[] text)
         {
-            bool isValidated = true;
+            var errbuf = new List<(int, string)>();
 
             for (int i = 0; i < text.Length; i++)
             {
-                string line = text[i];
+                string line = text[i].TrimStart();
 
-                if (string.IsNullOrWhiteSpace(line))
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                switch (validateList(text, ref i, line, errbuf))
                 {
-                    continue;
-                }
-
-                //for (int j = i + 1; j < text.Length; j++)
-                //{
-                //    if (!line.TrimEnd().EndsWith("\\", StringComparison.Ordinal))
-                //    {
-                //        i = j;
-                //        break;
-                //    }
-
-                //    line = line.Remove(line.Length - 1);
-                //    line += text[j].TrimStart();
-                //}
-
-
-                if (line.Contains("[") && !line.Contains("]"))
-                {
-                    bool arrayValid = false;
-
-                    for (int j = i + 1; j < text.Length; j++)
-                    {
-                        if (text[j].Contains("="))
-                        {
-                            break;
-                        }
-
-                        if (text[j].Contains("]"))
-                        {
-                            line += text[j].TrimStart();
-                            i = j;
-                            arrayValid = true;
-                            break;
-                        }
-
-                        line += text[j].TrimStart();
-                    }
-
-                    if (!arrayValid)
-                    {
-                        notMatching.Add((i + 1, text[i].TrimStart() + 
-                                        " --- [ was never closed"));
-                        isValidated = false;
+                    case EListValidator.LIST_NOT_CLOSED:
+                    case EListValidator.LIST_CHILD_SYNTAX:
+                        notMatching.AddRange(errbuf);
+                        return false;
+                    case EListValidator.OK:
+                        continue;
+                    case EListValidator.UNKNOWN:
                         break;
-                    }
                 }
 
-                if (!line.Contains("[") && line.Contains("]"))
+                if (!this.variablePattern.IsMatch(line))
                 {
-                    notMatching.Add((i + 1, text[i].TrimStart() + 
-                                        " <- unexpected token"));
-                    isValidated = false;
-                    break;
-                }
-
-                bool match = false;
-
-                if (this.variablePattern.IsMatch(line))
-                {
-                    match = true;
-                    continue;
-                }
-
-                if (this.arrayPattern.IsMatch(line))
-                {
-                    match = true;
-                    continue;
-                }
-
-                if (!match)
-                {
-                    notMatching.Add((i + 1, line.TrimStart() 
-                        + $" <- unexpected token(s) starting {i + 1} line"));
-                    isValidated = false;
-                    break;
+                    notMatching.Add((i + 1, $"{line} <-- unexpected token"));
+                    return false;
                 }
             }
 
-            return isValidated;
+            return true;
+        }
+
+        private EListValidator validateList(string[] text, ref int i, 
+                                      string line, List<(int, string)> errbuf)
+        {
+            if (line.Contains("[") && line.Contains("]") 
+                && !this.arrayPattern.IsMatch(line))
+            {
+                if (line.Count(c => c == '"') % 2 != 0)
+                {
+                    errbuf.Add((i + 1, $"\t{line}" +
+                                        " <-- quote must be closed"));
+                    return EListValidator.LIST_CHILD_SYNTAX;
+                }
+
+                return EListValidator.UNKNOWN;
+            }
+
+            if (line.Contains("[") && !line.Contains("]"))
+            {
+                errbuf.Add((i + 1, line));
+
+                for (int j = i + 1; j < text.Length; j++)
+                {
+                    string processLineBuf = text[j].TrimStart();
+
+                    if (processLineBuf.Contains("=")) break;
+
+                    if (processLineBuf.Count(c => c == '"') % 2 != 0)
+                    {
+                        errbuf.Add((j + 1, $"\t{processLineBuf}" +
+                                            " <-- quote must be closed"));
+                        return EListValidator.LIST_CHILD_SYNTAX;
+                    }
+
+                    if (processLineBuf.Contains("]"))
+                    {
+                        line += processLineBuf;
+                        errbuf.Add((j + 1, "\t" + processLineBuf));
+                        i = j;
+                        return EListValidator.OK;
+                    }
+
+                    errbuf.Add((j + 1, "\t" + processLineBuf));
+                    line += processLineBuf;
+                }
+
+                var firstEntry = errbuf[0];
+                errbuf[0] = (firstEntry.Item1, firstEntry.Item2 + 
+                                "<-- bracket was never closed");
+                return EListValidator.LIST_NOT_CLOSED;
+            }
+
+            if (!line.Contains("[") && line.Contains("]"))
+            {
+                return EListValidator.UNKNOWN;
+            }
+
+            return EListValidator.OK;
         }
 
         private void parseData(string text)
@@ -155,7 +163,7 @@ namespace AWPM
 #if DEBUG
         public Parser(string data)
         {
-            if (!this.syntaticCheck(data.Split('\n')))
+            if (!this.syntacticCheck(data.Split('\n')))
             {
                 throw new SyntaxErrorException(this.notMatching);
             }
