@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>AWPM</RootNamespace>
     <AssemblyName>AWPM</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -30,6 +30,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="Accessibility" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
@@ -37,6 +38,8 @@
     <Compile Include="ProgramFlags.cs" />
     <Compile Include="Operations.cs" />
     <Compile Include="Parser.cs" />
+    <Compile Include="Package.cs" />
+    <Compile Include="DependencyLookup.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
