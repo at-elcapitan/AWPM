@@ -13,10 +13,10 @@ namespace AWPM
             this.database = database;
         }
 
-        public (string, List<Package>) calculateDependencies(List<string> packageNames)
+        public (bool, List<Package>) calculateDependencies(List<string> packageNames)
         {
             List<Package> packages = new List<Package>();
-            List<string> missingPackages = new List<string>();
+            List<Package> missingPackages = new List<Package>();
 
             foreach (var packageName in packageNames)
             {
@@ -29,16 +29,16 @@ namespace AWPM
                 }
                 else
                 {
-                    missingPackages.Add(packageName);
+                    missingPackages.Add(package.Value);
                 }
             }
 
             if (missingPackages.Count > 0)
             {
-                return (string.Join(", ", missingPackages), null);
+                return (false, missingPackages);
             }
 
-            return ("", packages);
+            return (true, packages);
         }
 
         private Package? getPackageFromDatabase(string packageName)
