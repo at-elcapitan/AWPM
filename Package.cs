@@ -7,6 +7,7 @@ namespace AWPM
 {
     internal enum ReturnStates
     {
+        PACKAGE_SETUP,
         PREPEAR,
         INSTALL,
         POST_INSTALL,
@@ -23,8 +24,11 @@ namespace AWPM
     internal struct Package
     {
         public string url;
-        public string pacakgeName;
-        public string packageVersion;
+        public string packageName;
+        public int versionMajor;
+        public int versionMinor;
+        public int versionPatch;
+        public int versionBuild;
         public string tempWorkingDirectory;
         public string packageFileName;
         public ReturnStates state;
